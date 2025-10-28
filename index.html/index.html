@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Desafio 2: Jogo do Hash</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <nav>
+        <ul>
+            <li><a href="index.html" class="active">Desafio 2: Jogo do Hash</a></li>
+            <li><a href="ml.html">Desafio 1: Regressão ML</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h1>Desafio 2: O Jogo do Hash (A Frase Secreta)</h1>
+        <p>Inspirado no trabalho de quebra de cifras, sua missão é descobrir a frase secreta. Geramos um hash SHA-256 da frase. Você não pode "calcular" a frase de volta, mas pode usar as dicas para deduzi-la e testar se sua dedução está correta.</p>
+
+        <h3>Hash Alvo (SHA-256):</h3>
+        <div id="hash-display">Gerando hash...</div>
+        
+        <hr>
+        
+        <h3>Dicas:</h3>
+        <button id="hint-button">Pedir Dica (5 restantes)</button>
+        <div id="hint-display">
+            <ul>
+                </ul>
+        </div>
+        
+        <hr>
+        
+        <h3>Sua Tentativa:</h3>
+        <p>Digite a frase exata, incluindo pontuação e maiúsculas/minúsculas.</p>
+        <textarea id="guess-input" rows="4" placeholder="Digite a frase secreta que você deduziu..."></textarea>
+        <br><br>
+        <button id="guess-button">Testar Frase</button>
+        
+        <h3>Resultado:</h3>
+        <div id="result">...</div>
+    </div>
+
+    <script>
+        // --- Configuração do Jogo ---
+        const targetPassword = "A base teórica de toda computação moderna foi definida por Alan Turing em 1936.";
+        let targetHash = "";
+        
+        const hints = [
+            "A frase é sobre uma pessoa real e sua principal contribuição para a ciência.",
+            "Menciona o 'pai da computação' pelo nome.",
+            "Contém o ano em que seu artigo fundamental 'On Computable Numbers' foi publicado.",
+            "A frase começa com as três primeiras palavras: 'A base teórica...'",
+            "Dica Final (Formato): A b____ t______ d_ t___ c_________ m______ f__ d_______ p__ A___ T_____ e_ 1936."
+        ];
+        let hintCount = 0;
+
+        // --- Seletores do DOM ---
+        const hintButton = document.getElementById('hint-button');
+        const hintList = document.querySelector('#hint-display ul');
+        const guessButton = document.getElementById('guess-button');
+        const guessInput = document.getElementById('guess-input');
+        const resultDiv = document.getElementById('result');
+        const hashDisplay = document.getElementById('hash-display');
+
+        // --- Funções do Jogo ---
+
+        // 1. Função para gerar hash SHA-256
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
+        // 2. Função para fornecer uma dica
+        function provideHint() {
+            if (hintCount < hints.length) {
+                // Adiciona a dica na lista
+                const newHintItem = document.createElement('li');
+                newHintItem.innerText = hints[hintCount];
+                hintList.appendChild(newHintItem);
+
+                hintCount++;
+                
+                // Atualiza o texto do botão
+                const remaining = hints.length - hintCount;
+                hintButton.innerText = `Pedir Dica (${remaining} restantes)`;
+
+                // Desabilita o botão se as dicas acabarem
+                if (remaining === 0) {
+                    hintButton.disabled = true;
+                    hintButton.innerText = "Sem mais dicas";
+                }
+            }
+        }
+
+        // 3. Função para checar a tentativa
+        async function checkGuess() {
+            const guess = guessInput.value;
+            resultDiv.classList.remove('success', 'error'); // Limpa classes antigas
+
+            if (!guess) {
+                resultDiv.innerText = "Por favor, digite uma tentativa.";
+                resultDiv.className = 'error';
+                return;
+            }
+
+            // Gera o hash da tentativa do usuário
+            const guessHash = await sha256(guess);
+
+            // Compara os hashes
+            if (guessHash === targetHash) {
+                resultDiv.style.color = "green";
+                resultDiv.innerHTML = `<b>PARABÉNS!</b> Você encontrou a frase secreta!<br>
+                                       Seu Hash: ${guessHash}`;
+                resultDiv.className = 'success';
+                // Desabilita tudo após acertar
+                guessInput.disabled = true;
+                guessButton.disabled = true;
+                hintButton.disabled = true;
+            } else {
+                resultDiv.style.color = "red";
+                resultDiv.innerHTML = `<b>Errado.</b> O hash da sua frase não confere.<br>
+                                       Seu Hash: ${guessHash}`;
+                resultDiv.className = 'error';
+            }
+        }
+        
+        // 4. Função para iniciar o jogo
+        async function setupGame() {
+            targetHash = await sha256(targetPassword);
+            hashDisplay.innerText = targetHash;
+            
+            // Configura os botões
+            hintButton.onclick = provideHint;
+            guessButton.onclick = checkGuess;
+        }
+
+        // Iniciar o jogo quando a página carregar
+        window.onload = setupGame;
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Desafio 1: Regressão ML</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+</head>
+<body>
+
+    <nav>
+        <ul>
+            <li><a href="index.html">Desafio 2: Jogo do Hash</a></li>
+            <li><a href="ml.html" class="active">Desafio 1: Regressão ML</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h1>Desafio 1: Regressão Linear com TensorFlow.js</h1>
+        <p>Esta página demonstra um modelo de Machine Learning (Regressão Linear) treinando em tempo real no seu navegador. O objetivo é ensinar a IA a descobrir a fórmula $Y = 2X - 1$.</p>
+        <p><strong>Abra o console do desenvolvedor (F12) para ver o log do treinamento e o resultado da previsão.</strong></p>
+        
+        <h2>Log de Treinamento:</h2>
+        <p>O treinamento está sendo executado. O console (F12) mostrará o status e a previsão final.</p>
+        <p id="prediction-output">Aguardando previsão...</p>
+    </div>
+    
+    <script>
+        // 4. Código de Machine Learning
+        async function runRegression() {
+            console.log('Iniciando Desafio 1: Regressão Linear...');
+
+            // 1. Criar o modelo sequencial
+            const model = tf.sequential();
+
+            // 2. Adicionar uma camada densa (totalmente conectada)
+            // inputShape: [1] -> Recebe 1 número (X)
+            // units: 1       -> Retorna 1 número (Y)
+            model.add(tf.layers.dense({ units: 1, inputShape: [1] }));
+
+            // 3. Compilar o modelo
+            // loss: 'meanSquaredError' (Erro Quadrático Médio) - ideal para regressão
+            // optimizer: 'sgd' (Descida de Gradiente Estocástico) - um otimizador clássico
+            model.compile({
+                loss: 'meanSquaredError',
+                optimizer: 'sgd'
+            });
+
+            // 4. Preparar os dados de treinamento (Y = 2X - 1)
+            const xs = tf.tensor2d([-1.0, 0.0, 1.0, 2.0, 3.0, 4.0], [6, 1]);
+            const ys = tf.tensor2d([-3.0, -1.0, 1.0, 3.0, 5.0, 7.0], [6, 1]);
+
+            // 5. Treinar o modelo
+            console.log('Iniciando o treinamento do modelo...');
+            await model.fit(xs, ys, { 
+                epochs: 500, // 500 "rodadas" de treinamento
+                callbacks: { // Feedback visual no console
+                    onEpochEnd: (epoch, logs) => {
+                        if (epoch % 50 === 0){
+                           console.log(`Época ${epoch}: Perda = ${logs.loss}`);
+                        }
+                    }
+                }
+            });
+            console.log('Treinamento concluído!');
+
+            // 6. Fazer uma previsão
+            // O modelo nunca viu o número 10.
+            // O resultado correto (2*10 - 1) deve ser 19.
+            const input = tf.tensor2d([10.0], [1, 1]);
+            const prediction = model.predict(input);
+            const predictionValue = await prediction.data(); // Extrai o valor do tensor
+            
+            const resultText = `O modelo previu que para X = 10, Y = ${predictionValue[0].toFixed(4)}`;
+            
+            console.log('---------------------------');
+            console.log(resultText);
+            console.log('---------------------------');
+
+            // Exibe o resultado na página
+            document.getElementById('prediction-output').innerText = resultText + " (Confira o console para mais detalhes)";
+        }
+
+        // Executar a função
+        runRegression();
+    </script>
+</body>
+</html>
